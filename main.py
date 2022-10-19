@@ -1,8 +1,12 @@
 # Lab 9 Vira Oetterli och Davide Attebrant Sbrzesny
 
+from linkedQFile import LinkedQ
+
 #######################################################################################################################
 # BNF-Syntax functioner
 #######################################################################################################################
+class Syntax_fel(Exception):
+    pass
 
 def read_formel():
     '''<formel>::= <mol> \n'''
@@ -44,6 +48,12 @@ def create_list_of_atoms():
     list_of_atoms = string.split(' ')
     return list_of_atoms
 
+def enqueue_formel(formel_string):
+    queue = LinkedQ()
+    for character in formel_string:
+        if character != '\n' and character != ' ':
+            queue.enqueue(character)
+    return queue
 
 
 
