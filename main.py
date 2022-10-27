@@ -32,24 +32,60 @@ class Syntaxfel(Exception):
 
 def read_formel(queue):
     '''<formel>::= <mol> \n'''
-    read_molekyl(queue)
+    read_molekyl(queue, False)
 
-def read_molekyl(queue):
+def read_molekyl(queue, back_from_parenthesis):
     '''<mol>   ::= <group> | <group><mol>'''
+    read_group(queue)
+    if not queue.isEmpty():
+        if queue.peek() == ")":
+            return
+        read_molekyl(queue, False)
+    '''
+    if back_from_parenthesis:
+        numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+        if queue.peek() not in numbers:
+            raise Syntaxfel("Saknad siffra vid radslutet ")
+        read_number(queue, False)
+        return
     if queue.isEmpty():
         return
-    read_group(queue)
+    read_molekyl(queue, False)'''
 
 # Grupp. Får börja med atom eller start-parentes.
+# Är gruppstart inte en bokstav eller "(" ska vi få meddelande fel gruppstart.
+# Annars ska vi antingen läsa in atom + nummer
+# Eller ropa på molekyl igen och sen läsa nummer.
 def read_group(queue):
     '''<group> ::= <atom> |<atom><num> | (<mol>) <num>'''
     first_character = queue.peek()
-    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz("
-    if first_character not in letters:
+    acceptable_groupstart_characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz("
+    if first_character not in acceptable_groupstart_characters:
         raise Syntaxfel("Felaktig gruppstart vid radslutet ")
 
-    if first_character == "(":
-        '''(<mol>) <num>'''
+    if first_character != "(":
+        '''<atom> | <atom><num>'''
+        read_atom(queue)
+        numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+        if queue.peek() in numbers:
+            read_number(queue)
+
+    else:
+        queue.dequeue() # Ta bort startparentes
+        read_molekyl(queue, False)
+        if queue.peek() != ")":
+            raise Syntaxfel("Saknad högerparentes vid radslutet ")
+        queue.dequeue() # Tar bort slutparentes
+        numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+        if queue.peek() not in numbers:
+            raise Syntaxfel ("Saknad siffra vid radslutet ")
+        read_number(queue)
+
+
+
+
+    '''if first_character == "(":
+        (<mol>) <num>
         queue.dequeue() # Tar bort startparentesen
         new_string = ""
         while queue.peek() != ")":
@@ -65,13 +101,9 @@ def read_group(queue):
         if next_character not in numbers:
             raise Syntaxfel("De angav ingen siffra efter parentesslut") # Eget felmeddelande aftersom detta scenarion ej specificerats
         else:
-            read_number(queue)
-    else:
-        '''<atom> | <atom><num>'''
-        read_atom(queue)
-        numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-        if queue.peek in numbers:
-            read_number(queue)
+            read_number(queue)'''
+
+
 
 
 # Kollar om stor bokstav, ger fel annars. Kollar om nästa är en liten bokstav och kommer isåfall tugga upp den också.
@@ -128,8 +160,8 @@ def read_lowercase_letter(queue):
     else:
         raise Syntaxfel("Saknad stor bokstav vid radslutet ")
 
-# Måste få en ensam siffra.
-def read_number(queue):
+
+"""def read_number(queue):
     '''<num>   ::= 2 | 3 | 4 | ...'''
     acceptable_first_numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
     number_string = queue.dequeue()
@@ -147,7 +179,7 @@ def read_number(queue):
             else:
                 raise Syntaxfel("För litet tal vid radslutet ")
         except:
-            raise Syntaxfel("För litet tal vid radslutet ")
+            raise Syntaxfel("För litet tal vid radslutet ")"""
 
 
 def read_number(queue):
@@ -162,7 +194,7 @@ def read_number(queue):
             pass
         else:
             raise Syntaxfel("För litet tal vid radslutet ")
-    while queue.peek() in numbers:
+    while queue.peek() in numbers:  # Alla siffror på rad dequeueas.
         queue.dequeue()
 
 #######################################################################################################################
