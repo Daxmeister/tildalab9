@@ -32,25 +32,19 @@ class Syntaxfel(Exception):
 
 def read_formel(queue):
     '''<formel>::= <mol> \n'''
-    read_molekyl(queue, False)
+    read_molekyl(queue)
 
-def read_molekyl(queue, back_from_parenthesis):
+def read_molekyl(queue):
     '''<mol>   ::= <group> | <group><mol>'''
     read_group(queue)
     if not queue.isEmpty():
         if queue.peek() == ")":
-            return
-        read_molekyl(queue, False)
-    '''
-    if back_from_parenthesis:
-        numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-        if queue.peek() not in numbers:
-            raise Syntaxfel("Saknad siffra vid radslutet ")
-        read_number(queue, False)
-        return
-    if queue.isEmpty():
-        return
-    read_molekyl(queue, False)'''
+            global number_open_paranthesis_global   # Denna variabel håller koll på om vi har öppnat några parenteser.
+            if number_open_paranthesis_global == 0:
+                raise Syntaxfel("Felaktig gruppstart vid radslutet ")
+            else:
+                return
+        read_molekyl(queue)
 
 # Grupp. Får börja med atom eller start-parentes.
 # Är gruppstart inte en bokstav eller "(" ska vi få meddelande fel gruppstart.
@@ -72,37 +66,17 @@ def read_group(queue):
 
     else:
         queue.dequeue() # Ta bort startparentes
-        read_molekyl(queue, False)
+        global number_open_paranthesis_global
+        number_open_paranthesis_global += 1
+        read_molekyl(queue)
         if queue.peek() != ")":
             raise Syntaxfel("Saknad högerparentes vid radslutet ")
         queue.dequeue() # Tar bort slutparentes
+        number_open_paranthesis_global -= 1
         numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
         if queue.peek() not in numbers:
             raise Syntaxfel ("Saknad siffra vid radslutet ")
         read_number(queue)
-
-
-
-
-    '''if first_character == "(":
-        (<mol>) <num>
-        queue.dequeue() # Tar bort startparentesen
-        new_string = ""
-        while queue.peek() != ")":
-            new_string += queue.dequeue()
-        if queue.peek() != ")":
-            raise Syntaxfel("Saknad högerparentes vid radslutet ")
-        new_queue = enqueue_formel(new_string)
-        read_molekyl(new_queue)
-
-        # Kollar att det kommer en siffta efter och läser den.
-        next_character = queue.peek()
-        numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-        if next_character not in numbers:
-            raise Syntaxfel("De angav ingen siffra efter parentesslut") # Eget felmeddelande aftersom detta scenarion ej specificerats
-        else:
-            read_number(queue)'''
-
 
 
 
@@ -160,28 +134,6 @@ def read_lowercase_letter(queue):
     else:
         raise Syntaxfel("Saknad stor bokstav vid radslutet ")
 
-
-"""def read_number(queue):
-    '''<num>   ::= 2 | 3 | 4 | ...'''
-    acceptable_first_numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    number_string = queue.dequeue()
-    if number_string in acceptable_first_numbers:
-        return
-    else:
-        raise Syntaxfel("För litet tal vid radslutet ")
-
-    while queue.peek() in acceptable_first_numbers or queue.peek() == "0":
-        number_string == number_string + queue.dequeue()
-        try:
-            number = int(number_string)
-            if number >= 2:
-                pass
-            else:
-                raise Syntaxfel("För litet tal vid radslutet ")
-        except:
-            raise Syntaxfel("För litet tal vid radslutet ")"""
-
-
 def read_number(queue):
     '''<num>   ::= 2 | 3 | 4 | ...'''
     number_string = queue.dequeue()
@@ -203,6 +155,8 @@ def read_number(queue):
 # Input är en string, output är ett meddelande om ifall den följer syntax eller inte.
 def kolla_molekyl(molekylstring):
     queue = enqueue_formel(molekylstring)
+    global number_open_paranthesis_global
+    number_open_paranthesis_global = 0
     try:
         read_formel(queue)
         return "Formeln är syntaktiskt korrekt"
