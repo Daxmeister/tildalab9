@@ -170,12 +170,4 @@ def main():
         print(kolla_molekyl(string_molekyl))
         string_molekyl = input()
 
-main()
-
-exit()
-sample_string = ""
-sample_queue = enqueue_formel(sample_string)
-read_molekyl(sample_queue)
-
-
 
