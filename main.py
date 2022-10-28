@@ -7,7 +7,9 @@ from linkedQFile import LinkedQ
 # Stödfunktioner
 #######################################################################################################################
 
+
 def create_list_of_atoms():
+    '''Returnerar en lista med alla kända atomer.'''
     string = 'H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr ' \
              'Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In ' \
              'Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re ' \
@@ -16,7 +18,9 @@ def create_list_of_atoms():
     list_of_atoms = string.split(' ')
     return list_of_atoms
 
+
 def enqueue_formel(formel_string):
+    '''Konverterar en sträng till en linked queue.'''
     queue = LinkedQ()
     for character in formel_string:
         if character != '\n' and character != ' ':
@@ -27,12 +31,16 @@ def enqueue_formel(formel_string):
 #######################################################################################################################
 # BNF-Syntax functioner
 #######################################################################################################################
+
+
 class Syntaxfel(Exception):
     pass
+
 
 def read_formel(queue):
     '''<formel>::= <mol> \n'''
     read_molekyl(queue)
+
 
 def read_molekyl(queue):
     '''<mol>   ::= <group> | <group><mol>'''
@@ -40,11 +48,13 @@ def read_molekyl(queue):
     if not queue.isEmpty():
         if queue.peek() == ")":
             global number_open_paranthesis_global   # Denna variabel håller koll på om vi har öppnat några parenteser.
-            if number_open_paranthesis_global == 0:
+            if number_open_paranthesis_global == 0: # Har vi inga öppnade parenteser ska vi inte få slutparenteser.
                 raise Syntaxfel("Felaktig gruppstart vid radslutet ")
             else:
-                return
+                return  # Detta tar oss tillbaka till där vi kallades ifrån. Antingen kolla_molekyl eller
+                        # till read_group efter att en parentes har öppnats. Där kommer nästa steg att kolla siffror.
         read_molekyl(queue)
+
 
 # Grupp. Får börja med atom eller start-parentes.
 # Är gruppstart inte en bokstav eller "(" ska vi få meddelande fel gruppstart.
@@ -52,11 +62,14 @@ def read_molekyl(queue):
 # Eller ropa på molekyl igen och sen läsa nummer.
 def read_group(queue):
     '''<group> ::= <atom> |<atom><num> | (<mol>) <num>'''
+
+    # Kollar först att vi startar gruppen med godkänd karaktär.
     first_character = queue.peek()
     acceptable_groupstart_characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz("
     if first_character not in acceptable_groupstart_characters:
         raise Syntaxfel("Felaktig gruppstart vid radslutet ")
 
+    # Om det inte är en (<mol>) start läser den in den som en atom.
     if first_character != "(":
         '''<atom> | <atom><num>'''
         read_atom(queue)
@@ -64,15 +77,19 @@ def read_group(queue):
         if queue.peek() in numbers:
             read_number(queue)
 
+    # Om vi börjar med "(" kommer den att hantera det som en molekyl.
     else:
+        '''(< mol >) < num >'''
         queue.dequeue() # Ta bort startparentes
         global number_open_paranthesis_global
-        number_open_paranthesis_global += 1
+        number_open_paranthesis_global += 1 # Lägger till en öppnad parentes till vår global variabel.
         read_molekyl(queue)
         if queue.peek() != ")":
             raise Syntaxfel("Saknad högerparentes vid radslutet ")
         queue.dequeue() # Tar bort slutparentes
-        number_open_paranthesis_global -= 1
+        number_open_paranthesis_global -= 1 # Tar bort en öppnad parentes till vår global variabel.
+
+        # Kollar att det kommer en siffra efter avslutad parentes
         numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
         if queue.peek() not in numbers:
             raise Syntaxfel ("Saknad siffra vid radslutet ")
@@ -85,8 +102,6 @@ def read_group(queue):
 # Klarar inte att få None skickat till sig.
 def read_atom(queue):
     '''<atom>  ::= <LETTER> | <LETTER><letter>'''
-    # Läser in stora och små bokstäver
-
     lowercase_letters = "abcdefghijklmnopqrstuvwxyz"
     capital_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -124,6 +139,7 @@ def read_capital_letter(queue):
     else:
         raise Syntaxfel("Saknad stor bokstav vid radslutet " + character)
 
+
 # Kan få vad som helst, ser om det är liten bokstav.
 def read_lowercase_letter(queue):
     '''<letter>::= a | b | c | ... | z'''
@@ -133,6 +149,7 @@ def read_lowercase_letter(queue):
         return
     else:
         raise Syntaxfel("Saknad stor bokstav vid radslutet ")
+
 
 def read_number(queue):
     '''<num>   ::= 2 | 3 | 4 | ...'''
@@ -152,8 +169,11 @@ def read_number(queue):
 #######################################################################################################################
 # Run funktioner
 #######################################################################################################################
+
+
 # Input är en string, output är ett meddelande om ifall den följer syntax eller inte.
 def kolla_molekyl(molekylstring):
+    '''Tar emot en string och kör programmet.'''
     queue = enqueue_formel(molekylstring)
     global number_open_paranthesis_global
     number_open_paranthesis_global = 0
@@ -163,8 +183,9 @@ def kolla_molekyl(molekylstring):
     except Syntaxfel as fel:
         return str(fel) + str(queue)
 
-# Kör själva programmet
+
 def main():
+    '''Kör själva programmet. Ger möjlighet för input och skickar till kolla_molekyl.'''
     string_molekyl = input()
     while string_molekyl != '#':
         print(kolla_molekyl(string_molekyl))
